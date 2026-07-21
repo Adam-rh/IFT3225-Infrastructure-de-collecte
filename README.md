@@ -1,162 +1,130 @@
-# Ambiance API — IFT3225
+# SonoMap API — IFT3225
 
-API de collecte et de consultation d'ambiance en quasi temps réel. Le système reçoit des mesures d'amplitude sonore via un capteur Phyphox et des observations environnementales manuelles, les persiste dans MongoDB Atlas, et les rend interrogeables à travers des endpoints sémantiques d'agrégation.
+API de collecte et de consultation d'ambiance sonore en quasi temps réel. Le système reçoit des mesures d'amplitude via Phyphox et des observations environnementales, les persiste dans MongoDB Atlas, et les expose à travers des endpoints sémantiques. Phase 2 : authentification utilisateur JWT, coordonnées GPS des lieux, espace compte avec favoris.
 
 ## Prérequis
 
-- **Node.js** ≥ 18 (LTS recommandé)
-- **npm** ≥ 9
-- **MongoDB Atlas** — un cluster gratuit (M0) suffit
-- **Phyphox** — installé sur un téléphone (iOS ou Android)
-- **Postman** ou **Bruno** — pour tester les endpoints
+- Node.js ≥ 18
+- MongoDB Atlas (cluster M0 gratuit)
+- L'application cliente React (dossier `client/`) pour l'interface
 
-## Installation et lancement
+## Installation
 
 ```bash
-# 1. Cloner le dépôt
 git clone https://github.com/Adam-rh/IFT3225-Infrastructure-de-collecte.git
 cd IFT3225-Infrastructure-de-collecte
-
-# 2. Installer les dépendances
 npm install
-
-# 3. Configurer les variables d'environnement
 cp .env.example .env
-# Éditer .env avec votre URI MongoDB Atlas
+# Éditer .env avec votre URI MongoDB Atlas et JWT_SECRET
+```
 
-# 4. Peupler la base avec les données de démonstration
-npm run seed
+## Lancement
 
-# 5. Lancer le serveur
-npm run dev    # mode développement (--watch)
+```bash
+npm run dev    # mode développement
 npm start      # mode production
 ```
 
 Le serveur démarre sur `http://localhost:3000`.
 
-## Configuration `.env`
+## Configuration .env
 
 | Variable | Description |
-|---|---|
-| `MONGO_URI` | URI de connexion MongoDB Atlas |
-| `PORT` | Port du serveur (défaut : 3000) |
-| `PHYPHOX_HOST` | IP du téléphone Phyphox (ex: `http://192.168.1.42:8080`) |
-| `BRIDGE_API_KEY` | Clé API obtenue via `POST /devices` |
-| `API_URL` | URL du serveur API (défaut : `http://localhost:3000`) |
-| `BRIDGE_LOCATION` | Identifiant du lieu instrumenté |
-| `BRIDGE_INTERVAL` | Intervalle de collecte en secondes (défaut : 5) |
+|----------|-------------|
+| MONGO_URI | URI de connexion MongoDB Atlas |
+| PORT | Port du serveur (défaut : 3000) |
+| JWT_SECRET | Secret pour signer les tokens JWT |
+| PHYPHOX_HOST | IP du téléphone Phyphox |
+| BRIDGE_API_KEY | Clé API obtenue via POST /devices |
+| API_URL | URL du serveur API |
+| BRIDGE_LOCATION | Identifiant du lieu instrumenté |
+| BRIDGE_INTERVAL | Intervalle de collecte en secondes (défaut : 5) |
 
-## Table des endpoints
+## Scripts utilitaires
 
-### Gestion des devices
+| Commande | Description |
+|----------|-------------|
+| `npm run seed` | Données de démonstration |
+| `npm run seed-locations` | Insérer les 3 lieux avec coordonnées GPS |
+| `npm run seed-phase2` | 14 mesures + 3 observations Phase 2 |
+| `npm run bridge` | Lancer le bridge Phyphox |
+| `npm run load` | Recharger les données depuis les CSV |
+
+## Endpoints
+
+### Lieux (Phase 2)
 
 | Méthode | Endpoint | Auth | Description |
-|---|---|---|---|
-| `POST` | `/devices` | ❌ | Enregistrer un device → retourne `{ id, apiKey }` |
-| `GET` | `/devices` | ❌ | Lister les devices (clé masquée) |
+|---------|----------|------|-------------|
+| GET | /locations | Non | Lister tous les lieux avec coordonnées |
+| GET | /locations/:name | Non | Un lieu par son slug |
+| POST | /locations | Non | Créer un lieu |
 
-### Collecte (écriture — protégé par `x-api-key`)
+### Authentification (Phase 2)
 
 | Méthode | Endpoint | Auth | Description |
-|---|---|---|---|
-| `POST` | `/measurements` | ✅ | Soumettre une mesure capteur |
-| `POST` | `/measurements/batch` | ✅ | Soumettre un lot de mesures |
-| `GET` | `/measurements` | ❌ | Lister les mesures (filtres : `location`, `type`, `since`, `until`, `limit`) |
-| `POST` | `/observations` | ✅ | Soumettre une observation environnementale |
-| `GET` | `/observations` | ❌ | Lister les observations (filtres : `location`, `vibe`, `since`, `until`, `limit`) |
+|---------|----------|------|-------------|
+| POST | /auth/register | Non | Créer un compte → retourne JWT |
+| POST | /auth/login | Non | Se connecter → retourne JWT |
 
-### Endpoints sémantiques (vues dérivées — lecture publique)
+### Espace compte (Phase 2)
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| GET | /users/me | JWT | Mon profil |
+| GET | /users/me/locations | JWT | Mes lieux |
+| GET | /users/me/stats | JWT | Mes contributions |
+| POST | /users/me/favorites | JWT | Ajouter un favori |
+| DELETE | /users/me/favorites/:loc | JWT | Retirer un favori |
+
+### Devices (Phase 1)
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| POST | /devices | Non | Enregistrer un device → retourne apiKey |
+| GET | /devices | Non | Lister les devices |
+
+### Collecte (Phase 1)
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| POST | /measurements | x-api-key | Soumettre une mesure |
+| POST | /measurements/batch | x-api-key | Soumettre un lot |
+| GET | /measurements | Non | Lister les mesures |
+| POST | /observations | x-api-key | Soumettre une observation (device) |
+| POST | /observations/user | JWT | Soumettre une observation (utilisateur) |
+| GET | /observations | Non | Lister les observations |
+| GET | /observations/mine | JWT | Mes observations |
+
+### Endpoints sémantiques (Phase 1)
 
 | Méthode | Endpoint | Description |
-|---|---|---|
-| `GET` | `/ambiance/:location/now` | Portrait instantané (30 dernières min) |
-| `GET` | `/ambiance/:location/history?last=3h` | Évolution par tranches de 15 min |
-| `GET` | `/ambiance/:location/quiet-hours` | Créneaux typiquement calmes |
-| `GET` | `/ambiance/:location/stats` | Statistiques globales du lieu |
+|---------|----------|-------------|
+| GET | /ambiance/:location/now | Portrait instantané (30 dernières min) |
+| GET | /ambiance/:location/history?last=3h | Évolution par tranches de 15 min |
+| GET | /ambiance/:location/quiet-hours | Créneaux typiquement calmes |
+| GET | /ambiance/:location/stats | Statistiques globales |
 
-### Paramètres de filtrage
-
-- `location` — identifiant du lieu (ex: `cafe-olimpico`)
-- `since` / `until` — dates ISO 8601 (ex: `2026-06-10T08:00:00Z`)
-- `last` — durée relative (ex: `30m`, `3h`, `6h`, `24h`, `7d`)
-- `limit` — nombre max de résultats (défaut : 100, max : 500)
-
-## Authentification
-
-Les endpoints d'écriture (`POST`) sont protégés par une clé API dans l'en-tête `x-api-key`.
+## Tester les actions protégées
 
 ```bash
-# 1. Enregistrer un device
-curl -X POST http://localhost:3000/devices \
+# 1. Créer un compte
+curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name": "iPhone-1", "location": "cafe-olimpico"}'
+  -d '{"email":"test@test.com","username":"Test","password":"123456"}'
 
-# → Conserver la clé apiKey retournée
-
-# 2. Soumettre une mesure
-curl -X POST http://localhost:3000/measurements \
+# 2. Utiliser le token retourné pour soumettre une observation
+curl -X POST http://localhost:3000/observations/user \
   -H "Content-Type: application/json" \
-  -H "x-api-key: VOTRE_CLE_ICI" \
-  -d '{"type":"amplitude","value":52.3,"location":"cafe-olimpico","timestamp":"2026-06-12T14:00:00Z"}'
+  -H "Authorization: Bearer VOTRE_TOKEN" \
+  -d '{"location":"epicerie-iga","proximity":"moyen","vibe":"modéré"}'
 ```
 
-| Situation | Code | Réponse |
-|---|---|---|
-| En-tête `x-api-key` absent | `401` | `MISSING_API_KEY` |
-| Clé invalide | `403` | `INVALID_API_KEY` |
-| Clé valide | `201` | Document créé |
-
-## Bridge Phyphox
-
-Le bridge est un script Node.js qui interroge le capteur Phyphox à intervalle régulier et POST les données vers l'API.
-
-```bash
-# 1. Ouvrir "Audio Amplitude" dans Phyphox
-# 2. Activer "Accès à distance" (menu ⋮)
-# 3. Configurer .env (PHYPHOX_HOST, BRIDGE_API_KEY, etc.)
-# 4. Lancer le bridge
-npm run bridge
-```
-
-## Tests avec Postman
-
-1. Importer les endpoints dans Postman
-2. Lancer `npm run seed` pour avoir des données de démo
-3. Tester les GET sans authentification
-4. Tester les POST avec l'en-tête `x-api-key` (clé affichée par le seed)
-5. Vérifier les erreurs 401/403 en omettant ou falsifiant la clé
-
-## Structure du projet
-
-```
-ambiance-api/
-├── index.js                  ← point d'entrée
-├── seed.js                   ← script de données de démo
-├── bridge.js                 ← bridge Phyphox → API
-├── package.json
-├── .env.example
-├── .gitignore
-└── src/
-    ├── app.js                ← création Express + montage des routes
-    ├── db.js                 ← connexion MongoDB
-    ├── models/
-    │   ├── Device.js         ← schéma device (nom, lieu, clé API)
-    │   ├── Measurement.js    ← schéma mesure capteur
-    │   └── Observation.js    ← schéma observation environnementale
-    ├── routes/
-    │   ├── devices.js        ← CRUD devices
-    │   ├── measurements.js   ← collecte + consultation mesures
-    │   ├── observations.js   ← collecte + consultation observations
-    │   └── ambiance.js       ← endpoints sémantiques (agrégation)
-    └── middlewares/
-        └── auth.js           ← vérification x-api-key
-```
+## Structure
 
 ## Équipe
 
-- **Adam Rahmoune** ([@Adam-rh](https://github.com/Adam-rh))
-- **Sami Sabil** ([@samruhix](https://github.com/samruhix))
-
-## Licence
+- Adam Rahmoune (@Adam-rh)
+- Sami Sabil (@samruhix)
 
 Projet académique — IFT3225, Université de Montréal, été 2026.
