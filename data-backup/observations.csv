@@ -1,0 +1,4 @@
+_id,location,proximity,vibe,notes,timestamp,deviceId
+6a2d105200664fabf87a30ac,epicerie-iga,moyen,animé,"Session 1 - samedi soir IGA, ambiance commerciale avec annonces et conversations",2026-06-13T04:08:00.000Z,6a2d09e3b36c2f20de8ad53f
+6a30cd18ffdab552d5509fa1,auberge-gaspesie,moyen,modéré,"Session 2 - dimanche soir auberge Gaspesie, ambiance d''auberge en soiree avec conversations et activite tranquille",2026-06-15T00:00:00.000Z,6a2d09e3b36c2f20de8ad53f
+6a31d7a07f718b578a780382,perce-bord-de-mer,moyen,modéré,"Session 3 - Perce Gaspesie, bord de mer, ambiance naturelle avec vagues et vent, quelques discussions de touristes a proximite",2026-06-16T18:50:00.000Z,6a2d09e3b36c2f20de8ad53f
