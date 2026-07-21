@@ -1,0 +1,35 @@
+{
+  "name": "ambiance-api",
+  "version": "1.0.0",
+  "description": "API de collecte et consultation d'ambiance en quasi temps réel — IFT3225",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "seed": "node seed.js",
+    "bridge": "node bridge.js",
+    "export": "node export-data.js",
+    "load": "node load-from-csv.js",
+    "clean": "node clean-seed.js",
+    "seed-locations": "node seed-locations.js",
+    "seed-phase2": "node seed-new-measurements.js"
+},
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.5.0"
+  },
+  "keywords": [
+    "ambiance",
+    "iot",
+    "phyphox",
+    "express",
+    "mongodb"
+  ],
+  "license": "MIT"
+}
