@@ -34,7 +34,7 @@ app.get("/", (req, res) => {
       devices: "/devices",
       measurements: "/measurements",
       observations: "/observations",
-      ambiance: "/ambiance/:location/now | /history | /quiet-hours | /stats",
+      ambiance: "/ambiance/:location/now | /history | /quiet-hours | /stats | /stream",
       locations: "/locations",
       auth: "/auth/register | /auth/login",
       users: "/users/me | /users/me/locations | /users/me/stats | /users/me/favorites",
