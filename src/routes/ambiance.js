@@ -2,6 +2,8 @@
 import { Router } from "express";
 import * as mesuresRepo from "../repositories/measurements.js";
 import * as obsRepo from "../repositories/observations.js";
+import * as cache from "../cache/memoire.js";
+import { TTL } from "../config/cache.js";
 import {
   calculerSnapshot,
   grouperParHeure,
@@ -59,17 +61,36 @@ router.get("/:location/history", async (req, res) => {
     });
   }
 
+  const k = cache.cle(`history-${last}`, location);
+  const enCache = cache.lire(k);
+  if (enCache) {
+    res.set("X-Cache", "HIT");
+    return res.json(enCache);
+  }
+
   const mesures = await mesuresRepo.findDepuis(location, new Date(Date.now() - durationMs));
   const timeline = grouperParTranche(mesures);
 
-  res.json({
+  const reponse = {
     data: { location, period: last, timeline },
     meta: { bucketSize: "15m", bucketCount: timeline.length },
-  });
+  };
+
+  cache.ecrire(k, reponse, TTL.history);
+  res.set("X-Cache", "MISS");
+  res.json(reponse);
 });
 
 router.get("/:location/quiet-hours", async (req, res) => {
   const location = req.params.location.toLowerCase();
+
+  const k = cache.cle("quiet-hours", location);
+  const enCache = cache.lire(k);
+  if (enCache) {
+    res.set("X-Cache", "HIT");
+    return res.json(enCache);
+  }
+
   const mesures = await mesuresRepo.findParLieu(location);
 
   if (mesures.length === 0) {
@@ -79,14 +100,26 @@ router.get("/:location/quiet-hours", async (req, res) => {
   }
 
   const resultat = grouperParHeure(mesures);
-  res.json({
+  const reponse = {
     data: { location, ...resultat },
     meta: { totalHoursWithData: resultat.allHours.length },
-  });
+  };
+
+  cache.ecrire(k, reponse, TTL.quietHours);
+  res.set("X-Cache", "MISS");
+  res.json(reponse);
 });
 
 router.get("/:location/stats", async (req, res) => {
   const location = req.params.location.toLowerCase();
+
+  const k = cache.cle("stats", location);
+  const enCache = cache.lire(k);
+  if (enCache) {
+    res.set("X-Cache", "HIT");
+    return res.json(enCache);
+  }
+
   const mesures = await mesuresRepo.findParLieu(location);
   const observations = await obsRepo.findParLieu(location);
 
@@ -96,10 +129,14 @@ router.get("/:location/stats", async (req, res) => {
     });
   }
 
-  res.json({
+  const reponse = {
     data: { location, ...calculerStats(mesures, observations) },
     generatedAt: new Date(),
-  });
+  };
+
+  cache.ecrire(k, reponse, TTL.stats);
+  res.set("X-Cache", "MISS");
+  res.json(reponse);
 });
 
 router.get("/:location/stream", async (req, res) => {

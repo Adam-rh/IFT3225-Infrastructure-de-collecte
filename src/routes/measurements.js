@@ -1,7 +1,8 @@
-// src/routes/measurements.js — Collecte et consultation des mesures capteurs
+﻿// src/routes/measurements.js — Collecte et consultation des mesures capteurs
 import { Router } from "express";
 import Measurement from "../models/Measurement.js";
 import { requireApiKey } from "../middlewares/auth.js";
+import * as cache from "../cache/memoire.js";
 
 const router = Router();
 
@@ -13,8 +14,7 @@ router.post("/", requireApiKey, async (req, res) => {
     return res.status(400).json({
       error: {
         code: "MISSING_FIELDS",
-        message:
-          "Les champs 'type', 'value', 'location' et 'timestamp' sont requis.",
+        message: "Les champs 'type', 'value', 'location' et 'timestamp' sont requis.",
         received: Object.keys(req.body),
       },
     });
@@ -29,6 +29,9 @@ router.post("/", requireApiKey, async (req, res) => {
       timestamp: new Date(timestamp),
       deviceId: req.device._id,
     });
+
+    // Écriture réussie : les vues dérivées de ce lieu sont périmées
+    cache.invaliderLieu(location.toLowerCase());
 
     res.status(201).json({ data: measurement });
   } catch (err) {
@@ -59,6 +62,13 @@ router.post("/batch", requireApiKey, async (req, res) => {
     }));
 
     const inserted = await Measurement.insertMany(docs, { ordered: false });
+
+    // Un lot peut toucher plusieurs lieux : on invalide chacun une seule fois
+    const lieux = new Set(
+      measurements.map((m) => m.location?.toLowerCase()).filter(Boolean)
+    );
+    for (const lieu of lieux) cache.invaliderLieu(lieu);
+
     res.status(201).json({
       data: inserted,
       meta: { count: inserted.length },
@@ -78,7 +88,6 @@ router.get("/", async (req, res) => {
   if (location) filtre.location = location.toLowerCase();
   if (type) filtre.type = type;
 
-  // Filtre temporel
   if (since || until) {
     filtre.timestamp = {};
     if (since) filtre.timestamp.$gte = new Date(since);
