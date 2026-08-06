@@ -9,3 +9,9 @@ export function findDepuis(location, depuis) {
 export function findParLieu(location) {
   return Measurement.find({ location }).sort({ timestamp: 1 }).lean();
 }
+
+export function findParLieux(locations) {
+  return Measurement.find({ location: { $in: locations } })
+    .sort({ timestamp: 1 })
+    .lean();
+}

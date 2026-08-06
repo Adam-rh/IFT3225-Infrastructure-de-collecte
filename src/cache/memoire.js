@@ -26,11 +26,15 @@ export function ecrire(k, valeur, ttlMs) {
   entrees.set(k, { valeur, expireA: Date.now() + ttlMs });
 }
 
-/** Invalide toutes les entrées d'un lieu, quel que soit le préfixe */
+/**
+ * Invalide les vues dérivées d'un lieu après une écriture.
+ * Purge aussi le classement inter-lieux : une mesure sur n'importe quel lieu
+ * peut changer l'ordre du classement, sa portée est donc globale.
+ */
 export function invaliderLieu(location) {
   let supprimees = 0;
   for (const k of entrees.keys()) {
-    if (k.endsWith(`:${location}`)) {
+    if (k.endsWith(`:${location}`) || k.startsWith("best:")) {
       entrees.delete(k);
       supprimees++;
     }
@@ -40,6 +44,8 @@ export function invaliderLieu(location) {
 
 export function vider() {
   entrees.clear();
+  stats.hits = 0;
+  stats.miss = 0;
 }
 
 export function metriques() {

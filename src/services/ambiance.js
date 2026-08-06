@@ -131,3 +131,53 @@ export function calculerStats(mesures = [], observations = []) {
       }),
   };
 }
+/** Niveau de confiance dérivé du nombre d'échantillons disponibles */
+function niveauConfiance(n) {
+  if (n === 0) return "aucune";
+  if (n < 5) return "faible";
+  if (n < 20) return "moyenne";
+  return "bonne";
+}
+
+/**
+ * Classe les lieux du plus calme au plus animé.
+ * @param lieux    documents Location
+ * @param mesures  mesures brutes, tous lieux confondus
+ * @param heure    0-23 pour filtrer sur une heure précise, null pour tout l'historique
+ */
+export function classerLieux(lieux, mesures, heure = null) {
+  if (!Array.isArray(lieux) || lieux.length === 0) return [];
+
+  const parLieu = new Map();
+  for (const m of mesures ?? []) {
+    if (heure !== null && new Date(m.timestamp).getHours() !== heure) continue;
+    if (!parLieu.has(m.location)) parLieu.set(m.location, []);
+    parLieu.get(m.location).push(m.value);
+  }
+
+  const classes = lieux.map((l) => {
+    const valeurs = parLieu.get(l.name) ?? [];
+    const avg = valeurs.length ? moyenne(valeurs) : null;
+    return {
+      location: l.name,
+      label: l.label ?? l.name,
+      latitude: l.latitude ?? null,
+      longitude: l.longitude ?? null,
+      avgAmplitude: avg !== null ? arrondir(avg) : null,
+      classification: classifierAmbiance(avg),
+      sampleCount: valeurs.length,
+      confiance: niveauConfiance(valeurs.length),
+    };
+  });
+
+  classes.sort((a, b) => {
+    const aVide = a.avgAmplitude === null;
+    const bVide = b.avgAmplitude === null;
+    if (aVide !== bVide) return aVide ? 1 : -1;
+    if (aVide) return a.location.localeCompare(b.location);
+    if (a.avgAmplitude !== b.avgAmplitude) return a.avgAmplitude - b.avgAmplitude;
+    return a.location.localeCompare(b.location);
+  });
+
+  return classes;
+}

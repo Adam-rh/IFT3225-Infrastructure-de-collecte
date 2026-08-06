@@ -2,6 +2,7 @@
 import { Router } from "express";
 import * as mesuresRepo from "../repositories/measurements.js";
 import * as obsRepo from "../repositories/observations.js";
+import * as lieuxRepo from "../repositories/locations.js";
 import * as cache from "../cache/memoire.js";
 import { TTL } from "../config/cache.js";
 import {
@@ -9,6 +10,7 @@ import {
   grouperParHeure,
   grouperParTranche,
   calculerStats,
+  classerLieux,
 } from "../services/ambiance.js";
 
 const router = Router();
@@ -20,6 +22,65 @@ function parseDuration(str) {
   const multipliers = { m: 60_000, h: 3_600_000, d: 86_400_000 };
   return Number(n) * multipliers[unit];
 }
+
+/**
+ * GET /ambiance/best?heure=14
+ * Classe tous les lieux du plus calme au plus animé.
+ * Sans paramètre heure : classement sur tout l'historique.
+ *
+ * ⚠️ Cette route doit rester AVANT les routes /:location/...,
+ * sinon Express interprète "best" comme un nom de lieu.
+ */
+router.get("/best", async (req, res) => {
+  let heure = null;
+
+  if (req.query.heure !== undefined) {
+    heure = Number(req.query.heure);
+    if (!Number.isInteger(heure) || heure < 0 || heure > 23) {
+      return res.status(400).json({
+        error: {
+          code: "INVALID_HOUR",
+          message: "Le paramètre 'heure' doit être un entier entre 0 et 23.",
+        },
+      });
+    }
+  }
+
+  const k = `best:${heure ?? "all"}`;
+  const enCache = cache.lire(k);
+  if (enCache) {
+    res.set("X-Cache", "HIT");
+    return res.json(enCache);
+  }
+
+  const lieux = await lieuxRepo.findTous();
+
+  if (lieux.length === 0) {
+    return res.status(404).json({
+      error: { code: "NO_LOCATIONS", message: "Aucun lieu enregistré." },
+    });
+  }
+
+  const mesures = await mesuresRepo.findParLieux(lieux.map((l) => l.name));
+  const classement = classerLieux(lieux, mesures, heure);
+
+  const reponse = {
+    data: {
+      heure,
+      classement,
+      recommandation: classement.find((c) => c.sampleCount > 0) ?? null,
+    },
+    meta: {
+      totalLieux: classement.length,
+      lieuxAvecDonnees: classement.filter((c) => c.sampleCount > 0).length,
+    },
+    generatedAt: new Date(),
+  };
+
+  cache.ecrire(k, reponse, TTL.best);
+  res.set("X-Cache", "MISS");
+  res.json(reponse);
+});
 
 router.get("/:location/now", async (req, res) => {
   const location = req.params.location.toLowerCase();
