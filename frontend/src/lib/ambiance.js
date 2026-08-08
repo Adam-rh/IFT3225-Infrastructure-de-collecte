@@ -21,3 +21,11 @@ export function niveauHumain(db) {
   if (db < 75) return "Élevé";
   return "Très élevé";
 }
+// Doit rester aligné sur src/config/seuils.js côté serveur
+export const SEUILS = { calme: 40, modere: 60 };
+
+export const ECHELLE = [
+  { classe: "calme", libelle: "Calme", plage: "0 – 40 dB", flex: 2 },
+  { classe: "modéré", libelle: "Modéré", plage: "40 – 60 dB", flex: 1 },
+  { classe: "animé", libelle: "Animé", plage: "60 dB et plus", flex: 1 },
+];
