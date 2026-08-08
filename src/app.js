@@ -13,7 +13,22 @@ import usersRouter from "./routes/users.js";
 const app = express();
 
 // ─── Middlewares globaux ─────────────────────────────────────────────
-app.use(cors());
+const originesAutorisees = (process.env.CORS_ORIGIN ?? "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origine, callback) {
+      // Pas d'origine = appel serveur-à-serveur (bridge Phyphox, curl) : autorisé
+      if (!origine) return callback(null, true);
+      if (originesAutorisees.includes(origine)) return callback(null, true);
+      callback(new Error(`Origine non autorisée : ${origine}`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // ─── Routes ──────────────────────────────────────────────────────────
