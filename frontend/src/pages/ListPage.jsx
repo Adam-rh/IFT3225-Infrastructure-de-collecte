@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLieuxAmbiance } from "../hooks/useLieuxAmbiance";
-import { couleurNiveau, niveauHumain } from "../lib/ambiance";
+import { niveauHumain } from "../lib/ambiance";
+import NiveauBadge from "../components/NiveauBadge";
+import EtatChargement from "../components/EtatChargement";
+import EtatErreur from "../components/EtatErreur";
 
 const FILTRES = ["tous", "calme", "modéré", "animé"];
 
@@ -11,24 +14,8 @@ export default function ListPage() {
 
   const filtres = filtre === "tous" ? lieux : lieux.filter((l) => l.classification === filtre);
 
-  if (loading) {
-    return (
-      <div style={{ maxWidth: 800, margin: "2rem auto", padding: "0 2rem" }}>
-        <div className="skeleton" style={{ width: 200, height: 30, marginBottom: "1rem" }} />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="skeleton" style={{ width: "100%", height: 100, marginBottom: "1rem" }} />
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ maxWidth: 800, margin: "2rem auto", padding: "0 2rem", color: "red" }}>
-        {error}
-      </div>
-    );
-  }
+  if (loading) return <EtatChargement lignes={3} hauteur={100} />;
+  if (error) return <EtatErreur message={error} />;
 
   return (
     <div style={{ maxWidth: 800, margin: "2rem auto", padding: "0 2rem" }}>
@@ -89,18 +76,7 @@ export default function ListPage() {
                     : "Aucune donnée"}
                 </p>
               </div>
-              <span
-                style={{
-                  padding: "0.4rem 1rem",
-                  borderRadius: "20px",
-                  background: couleurNiveau(lieu.classification),
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "0.9rem",
-                }}
-              >
-                {lieu.classification}
-              </span>
+              <NiveauBadge classification={lieu.classification} />
             </div>
           </Link>
         ))

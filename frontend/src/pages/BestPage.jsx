@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useBest } from "../hooks/useBest";
-import { couleurNiveau, niveauHumain } from "../lib/ambiance";
+import { niveauHumain } from "../lib/ambiance";
+import NiveauBadge from "../components/NiveauBadge";
+import EtatChargement from "../components/EtatChargement";
+import EtatErreur from "../components/EtatErreur";
 
 const LIBELLE_CONFIANCE = {
   bonne: "confiance bonne",
@@ -34,24 +37,8 @@ export default function BestPage() {
   const [heure, setHeure] = useState(null);
   const { classement, recommandation, meta, loading, error } = useBest(heure);
 
-  if (loading) {
-    return (
-      <div style={{ maxWidth: 800, margin: "2rem auto", padding: "0 2rem" }}>
-        <div className="skeleton" style={{ width: 260, height: 30, marginBottom: "1rem" }} />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="skeleton" style={{ width: "100%", height: 90, marginBottom: "1rem" }} />
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ maxWidth: 800, margin: "2rem auto", padding: "0 2rem", color: "red" }}>
-        {error}
-      </div>
-    );
-  }
+  if (loading) return <EtatChargement lignes={3} hauteur={90} largeurTitre={260} />;
+  if (error) return <EtatErreur message={error} />;
 
   return (
     <div style={{ maxWidth: 800, margin: "2rem auto", padding: "0 2rem" }}>
@@ -80,7 +67,7 @@ export default function BestPage() {
             borderRadius: "8px",
             padding: "1.5rem",
             marginBottom: "1.5rem",
-            borderLeft: `6px solid ${couleurNiveau(recommandation.classification)}`,
+            borderLeft: "6px solid #f39c12",
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}
         >
@@ -139,18 +126,7 @@ export default function BestPage() {
               </p>
             </div>
 
-            <span
-              style={{
-                padding: "0.4rem 1rem",
-                borderRadius: "20px",
-                background: couleurNiveau(lieu.classification),
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "0.85rem",
-              }}
-            >
-              {lieu.classification}
-            </span>
+            <NiveauBadge classification={lieu.classification} />
           </div>
         </Link>
       ))}

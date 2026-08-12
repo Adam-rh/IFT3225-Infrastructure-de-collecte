@@ -7,6 +7,9 @@ import {
 import { useLieuData } from "../hooks/useLieuData";
 import { useLiveAmbiance } from "../hooks/useLiveAmbiance";
 import { couleurNiveau, niveauHumain, formaterEcart, SEUILS, ECHELLE } from "../lib/ambiance";
+import NiveauBadge from "../components/NiveauBadge";
+import EtatChargement from "../components/EtatChargement";
+import EtatErreur from "../components/EtatErreur";
 
 const CARTE = {
   background: "white",
@@ -36,19 +39,8 @@ export default function LieuPage() {
   const { location, stats, history, quietHours, loading, error } = useLieuData(name, periode);
   const { snapshot, enDirect } = useLiveAmbiance(name);
 
-  if (loading) {
-    return (
-      <div style={{ padding: "3rem", textAlign: "center" }}>
-        <div className="skeleton" style={{ width: 200, height: 30, margin: "0 auto 1rem" }} />
-        <div className="skeleton" style={{ width: "100%", height: 300, marginBottom: "1rem" }} />
-        <div className="skeleton" style={{ width: "100%", height: 200 }} />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div style={{ padding: "2rem", textAlign: "center", color: "red" }}>{error}</div>;
-  }
+  if (loading) return <EtatChargement lignes={2} hauteur={250} />;
+  if (error) return <EtatErreur message={error} />;
 
   const classification = stats?.measurements?.overallClassification ?? "inconnu";
   const moyenneLieu = stats?.measurements?.avgAmplitude ?? null;
@@ -70,48 +62,36 @@ export default function LieuPage() {
 
       <h1 style={{ marginTop: "0.5rem" }}>{location?.label ?? name}</h1>
 
-      <span
-        style={{
-          display: "inline-block",
-          padding: "0.5rem 1.5rem",
-          borderRadius: "20px",
-          background: couleurNiveau(classification),
-          color: "white",
-          fontSize: "1.2rem",
-          fontWeight: "bold",
-          marginBottom: "1.5rem",
-        }}
-      >
-        {classification}
-      </span>
+      <div style={{ marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+        <NiveauBadge classification={classification} taille="grand" />
 
-      {enDirect && (
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            marginLeft: "1rem",
-            padding: "0.3rem 0.8rem",
-            borderRadius: "12px",
-            background: "#f0f0f0",
-            fontSize: "0.85rem",
-          }}
-        >
-          <span
+        {enDirect && (
+          <div
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: "#2ecc71",
-              animation: "pulse 1.5s infinite",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "0.3rem 0.8rem",
+              borderRadius: "12px",
+              background: "#f0f0f0",
+              fontSize: "0.85rem",
             }}
-          />
-          {snapshot
-            ? `En direct : ${snapshot.classification} (${snapshot.avgAmplitude})`
-            : "En écoute — aucune mesure dans les 30 dernières minutes"}
-        </div>
-      )}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#2ecc71",
+                animation: "pulse 1.5s infinite",
+              }}
+            />
+            {snapshot
+              ? `En direct : ${snapshot.classification} (${snapshot.avgAmplitude})`
+              : "En écoute — aucune mesure dans les 30 dernières minutes"}
+          </div>
+        )}
+      </div>
 
       <div
         style={{
@@ -171,12 +151,7 @@ export default function LieuPage() {
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
         {PERIODES.map((p) => (
-          <button
-            key={p}
-            onClick={() => setPeriode(p)}
-            aria-pressed={periode === p}
-            style={boutonPeriode(periode === p)}
-          >
+          <button key={p} onClick={() => setPeriode(p)} aria-pressed={periode === p} style={boutonPeriode(periode === p)}>
             {p}
           </button>
         ))}
