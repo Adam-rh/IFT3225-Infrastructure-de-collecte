@@ -29,3 +29,10 @@ export const ECHELLE = [
   { classe: "modéré", libelle: "Modéré", plage: "40 – 60 dB", flex: 1 },
   { classe: "animé", libelle: "Animé", plage: "60 dB et plus", flex: 1 },
 ];
+/** Écart signé d'une valeur par rapport à une référence, en dB. */
+export function formaterEcart(valeur, reference) {
+  if (valeur === null || reference === null || reference === undefined) return "";
+  const d = valeur - reference;
+  const signe = d > 0 ? "+" : "";
+  return `${signe}${(Math.round(d * 100) / 100).toFixed(2)} dB`;
+}

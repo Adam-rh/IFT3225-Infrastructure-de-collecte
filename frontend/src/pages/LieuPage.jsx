@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import { useLieuData } from "../hooks/useLieuData";
 import { useLiveAmbiance } from "../hooks/useLiveAmbiance";
-import { couleurNiveau, niveauHumain, SEUILS, ECHELLE } from "../lib/ambiance";
+import { couleurNiveau, niveauHumain, formaterEcart, SEUILS, ECHELLE } from "../lib/ambiance";
 
 const CARTE = {
   background: "white",
@@ -51,6 +51,7 @@ export default function LieuPage() {
   }
 
   const classification = stats?.measurements?.overallClassification ?? "inconnu";
+  const moyenneLieu = stats?.measurements?.avgAmplitude ?? null;
 
   const cartesStats = stats
     ? [
@@ -203,7 +204,12 @@ export default function LieuPage() {
         </p>
       )}
 
-      <h2>Créneaux calmes</h2>
+      <h2>Créneaux les plus calmes</h2>
+      <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "0.5rem" }}>
+        Classement relatif à ce lieu. L'écart est calculé sur sa moyenne
+        {moyenneLieu !== null ? ` de ${moyenneLieu} dB` : ""}.
+      </p>
+
       {quietHours && quietHours.allHours.length > 0 ? (
         <div style={CARTE}>
           <ResponsiveContainer width="100%" height={250}>
@@ -226,10 +232,11 @@ export default function LieuPage() {
 
           <div style={{ display: "flex", gap: "2rem", marginTop: "1rem", flexWrap: "wrap" }}>
             <div>
-              <h3 style={{ color: couleurNiveau("calme"), fontSize: "1rem" }}>Les plus calmes</h3>
+              <h3 style={{ color: couleurNiveau("calme"), fontSize: "1rem" }}>Les moins bruyants</h3>
               {quietHours.quietest.map((h) => (
                 <p key={h.hour} style={{ fontSize: "0.9rem" }}>
-                  {h.label} — {h.avgAmplitude} dB ({niveauHumain(h.avgAmplitude)})
+                  {h.label} — {h.avgAmplitude} dB{" "}
+                  <span style={{ color: "#888" }}>({formaterEcart(h.avgAmplitude, moyenneLieu)})</span>
                 </p>
               ))}
             </div>
@@ -237,7 +244,8 @@ export default function LieuPage() {
               <h3 style={{ color: couleurNiveau("animé"), fontSize: "1rem" }}>Les plus animés</h3>
               {quietHours.loudest.map((h) => (
                 <p key={h.hour} style={{ fontSize: "0.9rem" }}>
-                  {h.label} — {h.avgAmplitude} dB ({niveauHumain(h.avgAmplitude)})
+                  {h.label} — {h.avgAmplitude} dB{" "}
+                  <span style={{ color: "#888" }}>({formaterEcart(h.avgAmplitude, moyenneLieu)})</span>
                 </p>
               ))}
             </div>
