@@ -1,45 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { addFavorite, removeFavorite, getMe } from "../api/auth";
+import { useFavorisStore } from "../store/favorisStore";
 
+/**
+ * Interface inchangée depuis le refactor des hooks : les pages qui
+ * l'utilisaient déjà n'ont pas eu à bouger. Seule l'implémentation
+ * est passée du state local au store.
+ */
 export function useFavorites() {
   const { user } = useAuth();
-  const [favoris, setFavoris] = useState([]);
+  const favoris = useFavorisStore((s) => s.favoris);
+  const charger = useFavorisStore((s) => s.charger);
+  const reinitialiser = useFavorisStore((s) => s.reinitialiser);
+  const basculer = useFavorisStore((s) => s.basculer);
 
   useEffect(() => {
-    if (!user) {
-      setFavoris([]);
-      return;
-    }
-    let annule = false;
-    getMe()
-      .then((res) => {
-        if (!annule) setFavoris(res.data.data.favorites ?? []);
-      })
-      .catch(() => {});
-    return () => {
-      annule = true;
-    };
-  }, [user]);
+    if (user) charger();
+    else reinitialiser();
+  }, [user, charger, reinitialiser]);
 
-  const estFavori = (nom) => favoris.includes(nom);
-
-  /** Mise à jour optimiste avec retour arrière si l'API échoue */
-  const basculer = async (nom) => {
-    if (!user) return;
-    const precedent = favoris;
-    try {
-      if (estFavori(nom)) {
-        setFavoris(favoris.filter((f) => f !== nom));
-        await removeFavorite(nom);
-      } else {
-        setFavoris([...favoris, nom]);
-        await addFavorite(nom);
-      }
-    } catch {
-      setFavoris(precedent);
-    }
+  return {
+    favoris,
+    estFavori: (nom) => favoris.includes(nom),
+    basculer,
   };
-
-  return { favoris, estFavori, basculer };
 }
