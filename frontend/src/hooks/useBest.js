@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getBest } from "../api/ambiance";
+import { lire, ecrire, TTL_CLIENT } from "../lib/cacheClient";
 
 /** @param heure 0-23 pour filtrer sur une heure, null pour tout l'historique */
 export function useBest(heure = null) {
@@ -11,15 +12,32 @@ export function useBest(heure = null) {
 
   useEffect(() => {
     let annule = false;
+    const cle = `best:${heure ?? "all"}`;
+
+    const enCache = lire(cle);
+    if (enCache) {
+      setClassement(enCache.classement);
+      setRecommandation(enCache.recommandation);
+      setMeta(enCache.meta);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     getBest(heure)
       .then(({ data }) => {
         if (annule) return;
-        setClassement(data.data.classement);
-        setRecommandation(data.data.recommandation);
-        setMeta(data.meta);
+        const charge = {
+          classement: data.data.classement,
+          recommandation: data.data.recommandation,
+          meta: data.meta,
+        };
+        ecrire(cle, charge, TTL_CLIENT.best);
+        setClassement(charge.classement);
+        setRecommandation(charge.recommandation);
+        setMeta(charge.meta);
       })
       .catch(() => {
         if (!annule) setError("Impossible de charger le classement des lieux.");
