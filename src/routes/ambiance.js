@@ -34,7 +34,9 @@ function parseDuration(str) {
 router.get("/best", async (req, res) => {
   let heure = null;
 
-  if (req.query.heure !== undefined) {
+  // Un paramètre vide (?heure=) n'est pas une heure : Number("") vaut 0,
+  // ce qui donnerait silencieusement le classement de minuit.
+  if (req.query.heure !== undefined && req.query.heure !== "") {
     heure = Number(req.query.heure);
     if (!Number.isInteger(heure) || heure < 0 || heure > 23) {
       return res.status(400).json({
