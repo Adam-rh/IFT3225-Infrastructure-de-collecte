@@ -20,6 +20,8 @@ const observationSchema = new mongoose.Schema({
     type: String,
     required: [true, "Le champ 'vibe' est requis."],
     enum: {
+      // « bruyant » retiré de l'interface en phase 2 (retour du professeur) mais
+      // conservé ici pour ne pas invalider d'anciennes observations en base.
       values: ["calme", "modéré", "animé", "bruyant"],
       message: "Valeurs acceptées pour 'vibe' : calme, modéré, animé, bruyant",
     },

@@ -16,6 +16,7 @@ export function useBest(heure = null) {
 
     const enCache = lire(cle);
     if (enCache) {
+      setError(null);
       setClassement(enCache.classement);
       setRecommandation(enCache.recommandation);
       setMeta(enCache.meta);
