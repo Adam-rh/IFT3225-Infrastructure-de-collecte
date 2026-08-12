@@ -1,6 +1,6 @@
 {
   "name": "ambiance-api",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "API de collecte et consultation d'ambiance en quasi temps réel — IFT3225",
   "type": "module",
   "main": "index.js",

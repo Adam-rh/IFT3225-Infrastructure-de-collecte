@@ -44,12 +44,12 @@ app.use("/users", usersRouter);
 app.get("/", (req, res) => {
   res.json({
     message: "API Ambiance — IFT3225",
-    version: "2.0.0",
+    version: "3.0.0",
     endpoints: {
       devices: "/devices",
       measurements: "/measurements",
       observations: "/observations",
-      ambiance: "/ambiance/:location/now | /history | /quiet-hours | /stats | /stream",
+      ambiance: "/ambiance/best | /ambiance/:location/now | /history | /quiet-hours | /stats | /stream",
       locations: "/locations",
       auth: "/auth/register | /auth/login",
       users: "/users/me | /users/me/locations | /users/me/stats | /users/me/favorites",
