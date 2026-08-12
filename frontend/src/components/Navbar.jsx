@@ -1,30 +1,38 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const LIEN = { color: "#ccc", textDecoration: "none" };
+
 export default function Navbar() {
   const { user, logoutUser } = useAuth();
 
   return (
-    <nav style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: "1rem 2rem",
-      background: "#1a1a2e",
-      color: "white",
-    }}>
-      <Link to="/" style={{ color: "white", textDecoration: "none", fontSize: "1.3rem", fontWeight: "bold" }}>
-         SonoMap
+    <nav
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "1rem 2rem",
+        background: "#1a1a2e",
+        color: "white",
+      }}
+    >
+      <Link
+        to="/"
+        style={{ color: "white", textDecoration: "none", fontSize: "1.3rem", fontWeight: "bold" }}
+      >
+        SonoMap
       </Link>
 
       <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <Link to="/" style={{ color: "#ccc", textDecoration: "none" }}>Carte</Link>
-        <Link to="/list" style={{ color: "#ccc", textDecoration: "none" }}>Liste</Link>
+        <Link to="/" style={LIEN}>Carte</Link>
+        <Link to="/list" style={LIEN}>Liste</Link>
+        <Link to="/ou-aller" style={LIEN}>Où aller</Link>
 
         {user ? (
           <>
-            <Link to="/account" style={{ color: "#ccc", textDecoration: "none" }}>Mon compte</Link>
-            <Link to="/submit" style={{ color: "#ccc", textDecoration: "none" }}>Soumettre</Link>
+            <Link to="/account" style={LIEN}>Mon compte</Link>
+            <Link to="/submit" style={LIEN}>Soumettre</Link>
             <span style={{ color: "#8888ff" }}>{user.username}</span>
             <button
               onClick={logoutUser}
@@ -42,8 +50,10 @@ export default function Navbar() {
           </>
         ) : (
           <>
-            <Link to="/login" style={{ color: "#ccc", textDecoration: "none" }}>Connexion</Link>
-            <Link to="/register" style={{ color: "#4ecdc4", textDecoration: "none" }}>Inscription</Link>
+            <Link to="/login" style={LIEN}>Connexion</Link>
+            <Link to="/register" style={{ color: "#4ecdc4", textDecoration: "none" }}>
+              Inscription
+            </Link>
           </>
         )}
       </div>

@@ -8,6 +8,7 @@ import RegisterPage from "./pages/RegisterPage";
 import SubmitPage from "./pages/SubmitPage";
 import AccountPage from "./pages/AccountPage";
 import ListPage from "./pages/ListPage";
+import BestPage from "./pages/BestPage";
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/submit" element={<SubmitPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/list" element={<ListPage />} />
+          <Route path="/ou-aller" element={<BestPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
