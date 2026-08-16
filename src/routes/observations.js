@@ -1,8 +1,9 @@
-// src/routes/observations.js
+﻿// src/routes/observations.js
 import { Router } from "express";
 import Observation from "../models/Observation.js";
 import { requireApiKey } from "../middlewares/auth.js";
 import { requireUser } from "../middlewares/requireUser.js";
+import * as cache from "../cache/memoire.js";
 
 const router = Router();
 
@@ -14,8 +15,7 @@ router.post("/", requireApiKey, async (req, res) => {
     return res.status(400).json({
       error: {
         code: "MISSING_FIELDS",
-        message:
-          "Les champs 'location', 'proximity', 'vibe' et 'timestamp' sont requis.",
+        message: "Les champs 'location', 'proximity', 'vibe' et 'timestamp' sont requis.",
         received: Object.keys(req.body),
       },
     });
@@ -30,6 +30,8 @@ router.post("/", requireApiKey, async (req, res) => {
       timestamp: new Date(timestamp),
       deviceId: req.device._id,
     });
+
+    cache.invaliderLieu(location.toLowerCase());
 
     res.status(201).json({ data: observation });
   } catch (err) {
@@ -62,6 +64,8 @@ router.post("/user", requireUser, async (req, res) => {
       timestamp: new Date(),
       userId: req.user._id,
     });
+
+    cache.invaliderLieu(location.toLowerCase());
 
     res.status(201).json({ data: observation });
   } catch (err) {

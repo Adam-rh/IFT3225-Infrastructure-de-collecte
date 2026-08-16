@@ -13,7 +13,22 @@ import usersRouter from "./routes/users.js";
 const app = express();
 
 // ─── Middlewares globaux ─────────────────────────────────────────────
-app.use(cors());
+const originesAutorisees = (process.env.CORS_ORIGIN ?? "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origine, callback) {
+      // Pas d'origine = appel serveur-à-serveur (bridge Phyphox, curl) : autorisé
+      if (!origine) return callback(null, true);
+      if (originesAutorisees.includes(origine)) return callback(null, true);
+      callback(new Error(`Origine non autorisée : ${origine}`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // ─── Routes ──────────────────────────────────────────────────────────
@@ -29,12 +44,12 @@ app.use("/users", usersRouter);
 app.get("/", (req, res) => {
   res.json({
     message: "API Ambiance — IFT3225",
-    version: "2.0.0",
+    version: "3.0.0",
     endpoints: {
       devices: "/devices",
       measurements: "/measurements",
       observations: "/observations",
-      ambiance: "/ambiance/:location/now | /history | /quiet-hours | /stats",
+      ambiance: "/ambiance/best | /ambiance/:location/now | /history | /quiet-hours | /stats | /stream",
       locations: "/locations",
       auth: "/auth/register | /auth/login",
       users: "/users/me | /users/me/locations | /users/me/stats | /users/me/favorites",

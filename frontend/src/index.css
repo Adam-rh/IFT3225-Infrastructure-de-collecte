@@ -14,21 +14,48 @@ a {
   color: #1a1a2e;
 }
 
+/* Shimmer animé sur transform : compositable par le GPU.
+   L'ancienne version animait background-position, que Lighthouse
+   signalait comme non composée et qui contribuait au CLS. */
 .skeleton {
-  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  position: relative;
+  overflow: hidden;
+  background: #e0e0e0;
   border-radius: 8px;
 }
 
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.65),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
+}
+
+/* Respecte le réglage système « réduire les animations » */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after,
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 @media (max-width: 600px) {

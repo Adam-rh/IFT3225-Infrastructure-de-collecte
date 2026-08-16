@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { getMe } from "../api/auth";
+import { viderTout } from "../lib/cacheClient";
 
 const AuthContext = createContext();
 
@@ -17,7 +18,9 @@ export function AuthProvider({ children }) {
     getMe()
       .then((res) => setUser(res.data.data))
       .catch(() => {
+        // Jeton expiré ou invalide : on nettoie tout, y compris le cache
         localStorage.removeItem("token");
+        viderTout();
       })
       .finally(() => setLoading(false));
   }, []);
@@ -29,6 +32,7 @@ export function AuthProvider({ children }) {
 
   const logoutUser = () => {
     localStorage.removeItem("token");
+    viderTout();
     setUser(null);
   };
 

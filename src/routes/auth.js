@@ -2,9 +2,19 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { JWT_SECRET, JWT_EXPIRATION } from "../config/jwt.js";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "ambiance-secret-dev";
+
+function signerJeton(user) {
+  return jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRATION,
+  });
+}
+
+function profilPublic(user) {
+  return { id: user._id, email: user.email, username: user.username };
+}
 
 // POST /auth/register — Créer un compte
 router.post("/register", async (req, res) => {
@@ -22,19 +32,9 @@ router.post("/register", async (req, res) => {
 
   try {
     const user = await User.create({ email, username, password });
-    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
 
     res.status(201).json({
-      data: {
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username,
-        },
-        token,
-      },
+      data: { user: profilPublic(user), token: signerJeton(user) },
     });
   } catch (err) {
     if (err.code === 11000) {
@@ -63,6 +63,9 @@ router.post("/login", async (req, res) => {
   }
 
   const user = await User.findOne({ email });
+
+  // Même message et même code pour un email inconnu ou un mot de passe erroné :
+  // distinguer les deux révélerait quels comptes existent.
   if (!user || !(await user.comparePassword(password))) {
     return res.status(401).json({
       error: {
@@ -72,19 +75,8 @@ router.post("/login", async (req, res) => {
     });
   }
 
-  const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
-
   res.json({
-    data: {
-      user: {
-        id: user._id,
-        email: user.email,
-        username: user.username,
-      },
-      token,
-    },
+    data: { user: profilPublic(user), token: signerJeton(user) },
   });
 });
 

@@ -1,17 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { getMyStats, getMyLocations, addFavorite, removeFavorite, getMe } from "../api/auth";
+import { getMyStats, getMyLocations } from "../api/auth";
 import { getLocations } from "../api/locations";
+import { useFavorites } from "../hooks/useFavorites";
+import EtatChargement from "../components/EtatChargement";
+import EtatErreur from "../components/EtatErreur";
 
 export default function AccountPage() {
   const { user, logoutUser } = useAuth();
   const navigate = useNavigate();
+  const { estFavori, basculer } = useFavorites();
+
   const [stats, setStats] = useState(null);
   const [myLocations, setMyLocations] = useState([]);
-  const [favorites, setFavorites] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -19,88 +24,96 @@ export default function AccountPage() {
       return;
     }
 
-    async function fetchData() {
+    let annule = false;
+
+    (async () => {
       try {
-        const [statsRes, myLocsRes, allLocsRes, meRes] = await Promise.all([
+        const [statsRes, myLocsRes, allLocsRes] = await Promise.all([
           getMyStats(),
           getMyLocations(),
           getLocations(),
-          getMe(),
         ]);
+
+        if (annule) return;
+
         setStats(statsRes.data.data);
         setMyLocations(myLocsRes.data.data);
         setAllLocations(allLocsRes.data.data);
-        setFavorites(meRes.data.data.favorites || []);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        if (!annule) setError("Impossible de charger votre compte.");
       } finally {
-        setLoading(false);
+        if (!annule) setLoading(false);
       }
-    }
-    fetchData();
+    })();
+
+    return () => {
+      annule = true;
+    };
   }, [user, navigate]);
 
-  const toggleFavorite = async (locationName) => {
-    try {
-      if (favorites.includes(locationName)) {
-        await removeFavorite(locationName);
-        setFavorites(favorites.filter((f) => f !== locationName));
-      } else {
-        await addFavorite(locationName);
-        setFavorites([...favorites, locationName]);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  if (loading) return <div style={{ padding: "2rem", textAlign: "center" }}>Chargement...</div>;
+  if (loading) return <EtatChargement lignes={2} hauteur={120} />;
+  if (error) return <EtatErreur message={error} />;
 
   return (
     <div style={{ maxWidth: 700, margin: "2rem auto", padding: "0 2rem" }}>
       <h1>Mon compte</h1>
-      <p><strong>Nom:</strong> {user.username}</p>
-      <p><strong>Email:</strong> {user.email}</p>
+      <p><strong>Nom :</strong> {user.username}</p>
+      <p><strong>Courriel :</strong> {user.email}</p>
 
       <h2>Mes contributions</h2>
       {stats && stats.totalObservations > 0 ? (
         <>
-          <p>Total: {stats.totalObservations} observation(s)</p>
+          <p>Total : {stats.totalObservations} observation(s)</p>
           {stats.byLocation.map((loc) => (
-            <p key={loc.location}>{loc.location}: {loc.count} observation(s)</p>
+            <p key={loc.location}>
+              {loc.location} : {loc.count} observation(s)
+            </p>
           ))}
         </>
       ) : (
-        <p>Aucune observation soumise.</p>
+        <p style={{ color: "#888" }}>Aucune observation soumise.</p>
       )}
 
       <h2>Mes lieux</h2>
       {myLocations.length > 0 ? (
         myLocations.map((loc) => <p key={loc}>{loc}</p>)
       ) : (
-        <p>Aucun lieu visité.</p>
+        <p style={{ color: "#888" }}>Aucun lieu visité.</p>
       )}
 
       <h2>Favoris</h2>
       {allLocations.map((loc) => (
-        <div key={loc.name} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+        <div
+          key={loc.name}
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}
+        >
           <button
-            onClick={() => toggleFavorite(loc.name)}
+            onClick={() => basculer(loc.name)}
+            aria-label={
+              estFavori(loc.name)
+                ? `Retirer ${loc.label} des favoris`
+                : `Ajouter ${loc.label} aux favoris`
+            }
+            aria-pressed={estFavori(loc.name)}
             style={{
               background: "none",
               border: "none",
               fontSize: "1.3rem",
               cursor: "pointer",
+              lineHeight: 1,
             }}
           >
-            {favorites.includes(loc.name) ? "⭐" : "☆"}
+            {estFavori(loc.name) ? "⭐" : "☆"}
           </button>
           <span>{loc.label}</span>
         </div>
       ))}
 
       <button
-        onClick={() => { logoutUser(); navigate("/"); }}
+        onClick={() => {
+          logoutUser();
+          navigate("/");
+        }}
         style={{
           marginTop: "2rem",
           padding: "0.7rem 2rem",

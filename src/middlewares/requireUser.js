@@ -1,8 +1,7 @@
 // src/middlewares/requireUser.js
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-
-const JWT_SECRET = process.env.JWT_SECRET || "ambiance-secret-dev";
+import { JWT_SECRET } from "../config/jwt.js";
 
 export async function requireUser(req, res, next) {
   const header = req.headers.authorization;
@@ -29,7 +28,7 @@ export async function requireUser(req, res, next) {
 
     req.user = user;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({
       error: { code: "INVALID_TOKEN", message: "Token invalide ou expiré." },
     });
